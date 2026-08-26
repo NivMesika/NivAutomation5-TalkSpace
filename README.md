@@ -62,7 +62,7 @@ support/utils/                      Unique generators, types, logger
 support/constants/                  Paths, API URL matches, asserted copy
 ```
 
-Prompts I used:
+## Prompts I used
 
 1. Let's focus only on Part 1 — Automation for now.
 
