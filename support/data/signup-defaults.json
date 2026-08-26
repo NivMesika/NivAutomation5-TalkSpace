@@ -1,0 +1,11 @@
+{
+  "country": "United States",
+  "state": "New York",
+  "nonUsCountry": "Canada",
+  "mailDomain": "mailinator.com",
+  "invalidEmail": "user@localhost",
+  "shortPassword": "Abcdef1",
+  "weakPassword": "abcdefgh",
+  "invalidNickname": "Qa user!",
+  "invalidOtp": "000000"
+}

@@ -1,0 +1,10 @@
+export const DEFAULT_BASE_URL = 'https://app.canary.talkspace.com';
+export const SIGNUP_PATH = '/signup/autoswitchpt';
+export const VERIFICATION_PATH = '/email-verification';
+export const LOGGED_IN_URL = /\/home|\/room\//;
+export const MAILINATOR_INBOX_URL = 'https://www.mailinator.com/v4/public/inboxes.jsp';
+export const REGISTRATION_URL_MATCH = '/v2/registration';
+export const EMAIL_VERIFICATION_URL_MATCH = '/v2/auth/email-verification';
+export const OTP_VERIFY_URL_MATCH = '/v2/auth/email-verification/otp';
+export const OTP_RESEND_URL_MATCH = '/v2/auth/email-verification/otp/resend';
+export const INVALID_VERIFICATION_HASH = 'email-verification#verificationCode=invalid-token';

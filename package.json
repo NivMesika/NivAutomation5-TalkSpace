@@ -1,0 +1,23 @@
+{
+  "name": "nivautomation5-talkspace",
+  "version": "1.0.0",
+  "description": "Playwright E2E for Talkspace canary signup (registration + email verification)",
+  "license": "ISC",
+  "author": "",
+  "type": "commonjs",
+  "scripts": {
+    "headed": "playwright test --headed",
+    "headless": "playwright test",
+    "report": "playwright show-report",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.62.1",
+    "@types/node": "^26.1.2",
+    "dotenv": "^17.4.2",
+    "typescript": "^7.0.2"
+  },
+  "dependencies": {
+    "playwright": "^1.62.1"
+  }
+}
