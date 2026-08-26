@@ -119,6 +119,7 @@ Tests must be independent and safe to run in parallel — no test should depend 
 
 Prioritize meaningful coverage over trying to test every possible field validation.
 
+---
 
 2. Ok, I reviewed the plan. I want to tighten both the **10 tests** and some of the framework decisions before we continue.
 
