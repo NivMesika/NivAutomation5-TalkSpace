@@ -37,7 +37,7 @@ Ten independent cases in [`tests/e2e/signup.spec.ts`](tests/e2e/signup.spec.ts).
 |---|---|
 | TS-01 | Empty required fields stay on signup |
 | TS-02 | Invalid email format |
-| TS-03 | Password too short and too weak |
+| TS-03 | Should reject passwords that do not meet security requirements |
 | TS-04 | Nickname with special characters |
 | TS-05 | Non-US country hides State |
 | TS-06 | US registration reaches email verification |
