@@ -5,8 +5,8 @@ import { Messages } from '../constants/messages';
 import { mailinatorLocalPart } from '../utils/utils';
 
 export type InboxVerification = {
-    code?: string;
-    link?: string;
+    code?: string; // 6-digit OTP from the TEXT/HTML tab
+    link?: string; // verify-email URL from the LINKS tab
 };
 
 export class MailinatorInbox extends General {
@@ -22,8 +22,8 @@ export class MailinatorInbox extends General {
     private readonly linksPanel: Locator;
 
     constructor(page: Page, testInfo: TestInfo, browser: Browser) {
-        super(page, testInfo);
-        this.browser = browser;
+        super(page, testInfo); // Calls the constructor of the General class
+        this.browser = browser; // used to open a second context so Mailinator doesn't steal the Talkspace tab
         this.inboxField = page.getByRole('textbox', { name: 'inbox field' });
         this.goButton = page.getByRole('button', { name: 'GO' });
         this.verificationRow = page.getByRole('row', {
@@ -40,7 +40,7 @@ export class MailinatorInbox extends General {
     flows = {
         readVerification: async (email: string) => {
             return test.step(`Read verification email for ${email}`, async () => {
-                const context = await this.browser.newContext();
+                const context = await this.browser.newContext(); // isolated session — Talkspace cookies stay on the original page
                 const inboxPage = await context.newPage();
                 const inbox = new MailinatorInbox(inboxPage, this.testInfo, this.browser);
 
@@ -49,20 +49,20 @@ export class MailinatorInbox extends General {
                     this.logger.info(`Retrieved verification payload for ${email}`);
                     return payload;
                 } finally {
-                    await context.close();
+                    await context.close(); // always close so we don't leak browsers if the email never arrives
                 }
             });
         },
     };
 
     private async openLatestVerification(email: string): Promise<InboxVerification> {
-        const localPart = mailinatorLocalPart(email);
+        const localPart = mailinatorLocalPart(email); // qa.ts.1712345678901.ab12cd — Mailinator inbox is the part before @
         await this.page.goto(`${MAILINATOR_INBOX_URL}?to=${encodeURIComponent(localPart)}`, {
             waitUntil: 'domcontentloaded',
         });
         await this.dismissCookieBannerIfPresent();
 
-        if (await this.inboxField.isVisible().catch(() => false)) {
+        if (await this.inboxField.isVisible().catch(() => false)) { // public inbox sometimes still asks for the name
             await this.inboxField.fill(localPart);
             await this.goButton.click();
         }
@@ -70,7 +70,7 @@ export class MailinatorInbox extends General {
         await expect(
             this.verificationRow.first(),
             'Talkspace verification email should arrive in Mailinator',
-        ).toBeVisible({ timeout: 90_000 });
+        ).toBeVisible({ timeout: 90_000 }); // email delivery is the one wait that genuinely needs more than Playwright defaults
         await this.verificationRow.first().click();
 
         const code = await this.readCodeFromEmail();
@@ -98,7 +98,7 @@ export class MailinatorInbox extends General {
             await this.htmlTab.click();
         }
 
-        const frame = this.htmlPanel.locator('iframe').first().contentFrame();
+        const frame = this.htmlPanel.locator('iframe').first().contentFrame(); // HTML body is inside Mailinator's preview iframe
         const codeLocator = frame.getByText(/\b\d{6}\b/);
 
         try {
@@ -106,7 +106,7 @@ export class MailinatorInbox extends General {
             const raw = ((await codeLocator.first().textContent()) ?? '').trim();
             return raw.match(/\d{6}/)?.[0];
         } catch {
-            return undefined;
+            return undefined; // link-variant emails have no 6-digit code — that's fine
         }
     }
 
@@ -122,7 +122,7 @@ export class MailinatorInbox extends General {
         }
 
         const href = await this.linksPanel
-            .locator('a[href*="email-verification"]')
+            .locator('a[href*="email-verification"]') // CSS fallback if the accessible name doesn't include email-verification
             .first()
             .getAttribute('href')
             .catch(() => null);

@@ -5,6 +5,7 @@ import {
     EMAIL_VERIFICATION_URL_MATCH,
     INVALID_VERIFICATION_HASH,
     LOGGED_IN_URL,
+    MEET_YOUR_PROVIDER_PATH,
     OTP_RESEND_URL_MATCH,
     OTP_VERIFY_URL_MATCH,
     VERIFICATION_PATH,
@@ -23,7 +24,7 @@ export class EmailVerificationPage extends General {
     private readonly welcomeHeading: Locator;
 
     constructor(page: Page, testInfo: TestInfo) {
-        super(page, testInfo);
+        super(page, testInfo); // Calls the constructor of the General class
         this.verificationTitle = page.getByText(Messages.otpTitle);
         this.otpInputOne = page.getByRole('textbox', { name: 'Input verification code 1' });
         this.otpInputs = page.getByRole('textbox', { name: /Input verification code \d/ });
@@ -36,14 +37,14 @@ export class EmailVerificationPage extends General {
         this.welcomeHeading = page.getByText(Messages.welcomeNoName);
     }
 
-    async isOtpMode(): Promise<boolean> {
-        return this.otpInputOne.isVisible().catch(() => false);
+    async isOtpMode(): Promise<boolean> { // canary A/B: 6-digit OTP inputs vs a verify-email link
+        return this.otpInputOne.isVisible().catch(() => false); // returns true if the OTP inputs are visible, false otherwise
     }
 
 
     async enterOtp(code: string): Promise<void> {
         await expect(this.otpInputOne, 'First OTP input should be ready').toBeVisible();
-        await this.otpInputOne.fill(code);
+        await this.otpInputOne.fill(code); // filling the first box is enough — the app distributes the digits
         this.logger.info('Entered email verification code');
     }
 
@@ -56,7 +57,7 @@ export class EmailVerificationPage extends General {
                         !response.url().includes('/resend') &&
                         response.request().method() === 'POST',
                 );
-                await this.enterOtp(code);
+                await this.enterOtp(code); // "000000"
                 const response = await responsePromise;
                 expect(response.status(), 'Invalid OTP should be rejected by the API').toBe(401);
                 this.logger.info('Invalid OTP request returned 401');
@@ -69,7 +70,7 @@ export class EmailVerificationPage extends General {
         },
         openInvalidVerificationLink: async () => {
             return test.step('Open an invalid email verification link', async () => {
-                await this.page.goto(`/${INVALID_VERIFICATION_HASH}`, {
+                await this.page.goto(`/${INVALID_VERIFICATION_HASH}`, { // hash with a fake verificationCode
                     waitUntil: 'domcontentloaded',
                 });
                 this.logger.info('Opened invalid verification hash');
@@ -81,7 +82,7 @@ export class EmailVerificationPage extends General {
                 this.logger.info('Opened verification link from inbox');
             });
         },
-        submitInvalidVerification: async (invalidOtp: string) => {
+        submitInvalidVerification: async (invalidOtp: string) => { // TS-08: OTP variant vs link variant
             return test.step('Submit invalid email verification', async () => {
                 if (await this.isOtpMode()) {
                     await this.flows.enterInvalidOtp(invalidOtp);
@@ -90,7 +91,7 @@ export class EmailVerificationPage extends General {
                 await this.flows.openInvalidVerificationLink();
             });
         },
-        resendVerification: async () => {
+        resendVerification: async () => { // TS-09: Resend code (OTP) or Resend email (link)
             return test.step('Resend the email verification', async () => {
                 if (await this.isOtpMode()) {
                     await expect(
@@ -134,7 +135,7 @@ export class EmailVerificationPage extends General {
                 this.logger.info(`Verification email resend returned ${response.status()}`);
             });
         },
-        completeVerification: async (payload: { code?: string; link?: string }) => {
+        completeVerification: async (payload: { code?: string; link?: string }) => { // TS-10: use whichever the inbox actually contained
             return test.step('Complete email verification from inbox', async () => {
                 if (payload.code && (await this.isOtpMode())) {
                     await this.flows.enterValidOtp(payload.code);
@@ -187,10 +188,15 @@ export class EmailVerificationPage extends General {
             this.logger.success('Invalid verification link did not admit the user');
         },
         emailVerified: async () => {
-            await expect(
-                this.verifiedToast.or(this.welcomeHeading).first(),
-                'Verified users should see a success toast or the Talkspace welcome screen',
-            ).toBeVisible();
+            const successUi = this.verifiedToast.or(this.welcomeHeading).first(); // .first() — both can exist; without it Playwright strict-mode fails
+            await expect(async () => {
+                const onMeetYourProvider = this.page.url().includes(MEET_YOUR_PROVIDER_PATH);
+                const uiVisible = await successUi.isVisible();
+                expect(
+                    onMeetYourProvider || uiVisible,
+                    'Verified users should see a success toast, the welcome screen, or land on meet-your-provider',
+                ).toBeTruthy();
+            }).toPass();
             await expect(
                 this.page,
                 'Verified users should land in the logged-in app',

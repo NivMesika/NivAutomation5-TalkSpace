@@ -24,7 +24,7 @@ export class SignupPage extends General {
     private readonly generalRegistrationError: Locator;
 
     constructor(page: Page, testInfo: TestInfo) {
-        super(page, testInfo);
+        super(page, testInfo); // Calls the constructor of the General class
         this.createAccountHeading = page.getByRole('heading', { name: 'Create your account' });
         this.emailInput = page.getByRole('textbox', { name: 'Email' });
         this.passwordInput = page.getByRole('textbox', { name: 'Password' });
@@ -80,7 +80,7 @@ export class SignupPage extends General {
         this.logger.info(`Selected state: ${state}`);
     }
 
-    async fillForm(input: SignupFormInput): Promise<void> {
+    async fillForm(input: SignupFormInput): Promise<void> { // only fills fields the caller passed — negative tests omit the rest
         if (input.email) {
             await this.fillEmail(input.email);
         }
@@ -103,7 +103,7 @@ export class SignupPage extends General {
         this.logger.info('Clicked Create account');
     }
 
-    async submitAndWaitForRegistration(): Promise<Response> {
+    async submitAndWaitForRegistration(): Promise<Response> { // start waiting BEFORE the click so we don't miss the POST
         const responsePromise = this.page.waitForResponse(
             (response) =>
                 response.url().includes(REGISTRATION_URL_MATCH) &&
@@ -114,26 +114,26 @@ export class SignupPage extends General {
     }
 
     flows = {
-        register: async (user: TestUser) => {
+        register: async (user: TestUser) => { // happy path: unique user → 201 → email verification
             return test.step('Register a new Talkspace account', async () => {
                 await this.fillForm({
                     email: user.email,
                     password: user.password,
                     nickname: user.nickname,
-                    state: user.state,
+                    state: user.state, // Country defaults to United States, so State is required
                 });
                 const response = await this.submitAndWaitForRegistration();
                 expect(response.status(), 'Registration API should return 201').toBe(201);
                 this.logger.info(`Registered ${user.email}`);
             });
         },
-        submitWith: async (input: SignupFormInput) => {
+        submitWith: async (input: SignupFormInput) => { // negative cases: fill whatever was passed and submit, no API wait
             return test.step('Fill signup form and submit', async () => {
                 await this.fillForm(input);
                 await this.submit();
             });
         },
-        submitDuplicate: async (user: TestUser) => {
+        submitDuplicate: async (user: TestUser) => { // TS-07: same email again — should stay on verification, not enter the app
             return test.step('Submit signup with an existing email', async () => {
                 await this.fillForm({
                     email: user.email,
@@ -171,7 +171,7 @@ export class SignupPage extends General {
         },
         passwordTooWeak: async () => {
             await expect(
-                this.passwordTooWeakError.or(this.passwordTooWeakEnhancedError),
+                this.passwordTooWeakError.or(this.passwordTooWeakEnhancedError), // canary A/B: either copy is a pass
                 'Weak password should be rejected even when it meets the length minimum',
             ).toBeVisible();
         },
